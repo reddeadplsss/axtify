@@ -1,0 +1,1 @@
+{"name":"axtify","version":"1.0.0","private":true,"type":"module","description":"An independent, local-first music player informed by Spotify REA research","license":"MIT","scripts":{"start":"node server.mjs","test":"node --test tests/*.test.mjs"},"engines":{"node":">=22"}}
