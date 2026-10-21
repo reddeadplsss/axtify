@@ -4,25 +4,36 @@ An independent, open-source music player for your own audio collection. Spotify'
 
 ![Axtify desktop](docs/desktop.png)
 
-## Run
+## Windows desktop app
 
-Requires Node.js 22 or later. No dependencies or API keys.
+Download the installer from **[Releases](https://github.com/reddeadplsss/axtify/releases/latest)**. Run `Axtify-Setup-1.1.0-x64.exe`, then open **Axtify** from the Start menu. No Node.js, terminal, or separate browser is required. Requires 64-bit Windows 10 or later.
+
+A portable `.exe` is also available. It does not require installation, but saves library/settings in your Windows user profile, not alongside the executable. Builds are unsigned, so Windows may show an unknown-publisher warning.
+
+The desktop app has its own persistent local library, separate from the browser version. Reimport your audio and Spotify JSON exports when switching. Normal app updates preserve the desktop library; removing its app data removes the library. Keep your original music backed up.
+
+## Run from source
+
+Requires Node.js 22 or later.
 
 ```sh
-npm start
+npm ci
+npm run desktop
 ```
 
-Open http://localhost:4173. Use `PORT=5000 npm start` for another port. Keep the same port to keep the same browser library: storage is scoped to the origin.
+To build the Windows installer and portable executable on Windows:
+
+```sh
+npm run dist:win
+```
+
+Outputs go into `dist/`. The tagged-release workflow builds and tests the packaged app on Windows before publishing the executables and checksums. The first build downloads Electron and packaging tools.
+
+The browser version remains available without installing dependencies: run `node server.mjs`, or double-click `Start-Axtify.cmd` on Windows, then open http://localhost:4173. Keep the server terminal open. Browser storage is scoped to the origin, so keep the same port for the same library.
 
 ## Customize
 
-Click **Customize** in the header to change the app name, accent, and background. Defaults: Axtify with light crimson (`#f08090`). Settings persist on this browser.
-
-## Windows
-
-Axtify runs as a local web app on Windows with Node.js 22 or later and a modern browser such as Edge, Chrome, or Firefox. Download this repository as a ZIP and extract it, then double-click **Start-Axtify.cmd**. Open http://localhost:4173 while the terminal window stays open. There is no dependency installation or build step.
-
-Alternatively, open PowerShell in the extracted folder and run `node server.mjs`. This is not a packaged Windows `.exe`; native Windows UI/audio checks have not been performed. Automated tests run on Windows and Linux in GitHub Actions. Browser codec support varies.
+Click **Customize** in the header to change the app name, accent, and background. Defaults: Axtify with light crimson (`#f08090`). Settings persist in the current app/browser profile.
 
 ## Import Spotify playlists and track lists
 
@@ -50,9 +61,10 @@ Audio blobs, likes, and playlists persist in IndexedDB on this browser/device. T
 
 ```sh
 npm test
+npm run test:desktop
 ```
 
-`public/` contains the plain JavaScript app, stylesheet, and HTML. `server.mjs` is a loopback-only static server. Tests cover filtering, queue behavior, filename parsing, generated WAV integrity, and HTTP serving boundaries. Browser checks and their limits are recorded in `docs/VALIDATION.md`.
+`desktop/` contains the sandboxed Electron shell, restricted local protocol, and external-link policy. No renderer access to Node.js is exposed. Desktop music/settings stay in its persistent app profile. `public/` contains the plain JavaScript app, stylesheet, and HTML. `server.mjs` is a loopback-only static server. Tests cover filtering, queue behavior, filename parsing, generated WAV integrity, and HTTP serving boundaries. Browser checks and their limits are recorded in `docs/VALIDATION.md`.
 
 See [research notes](docs/RESEARCH.md) for evidence, scope, and open questions. This is a standalone local music player, with no Spotify streaming, login, live catalog, or DRM implementation. It is not affiliated with Spotify. No Spotify binaries, source bundles, fonts, artwork, or audio are redistributed.
 

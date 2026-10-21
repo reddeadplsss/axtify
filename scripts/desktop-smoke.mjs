@@ -1,0 +1,32 @@
+import {_electron as electron} from 'playwright-core';
+import assert from 'node:assert/strict';
+import {mkdtemp,rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import path from 'node:path';
+const profile=await mkdtemp(path.join(tmpdir(),'axtify-smoke-'));
+const appPath=path.resolve('.');
+const executable=process.env.AXTIFY_EXECUTABLE;
+const args=[...(process.platform==='linux'?['--no-sandbox']:[]),`--user-data-dir=${profile}`,...(executable?[]:[appPath])];
+let app;
+try{
+ app=await electron.launch({...(executable?{executablePath:executable}:{}),args,timeout:60000});
+ const page=await app.firstWindow();const errors=[];page.on('pageerror',error=>errors.push(error.message));
+ await page.waitForFunction(()=>document.querySelector('#brand-name')?.textContent==='Axtify');
+ assert.equal(new URL(page.url()).protocol,'axtify:');
+ const preferences=await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].webContents.getLastWebPreferences());
+ assert.equal(preferences.nodeIntegration,false);assert.equal(preferences.contextIsolation,true);assert.equal(preferences.sandbox,true);
+ assert.equal(await page.evaluate(()=>typeof window.require),'undefined');
+ await page.locator('#customize').click();await page.locator('#app-name').fill('Axtify Desktop');await page.locator('#accent-color').fill('#ff8899');await page.getByRole('button',{name:'Save appearance'}).click();await page.waitForFunction(()=>document.title.startsWith('Axtify Desktop'));
+ await page.reload();await page.waitForFunction(()=>document.title.startsWith('Axtify Desktop'));
+ await page.locator('#demo').click();await page.waitForFunction(()=>!document.querySelector('audio').paused&&document.querySelector('audio').currentTime>0);
+ await page.locator('#spotify-import').click();await page.locator('#spotify-files').setInputFiles({name:'Playlist1.json',mimeType:'application/json',buffer:Buffer.from(JSON.stringify({playlists:[{name:'Desktop test',items:[{track:{trackName:'Song',artistName:'Artist',trackUri:'spotify:track:1234567890123456789012'}}]}]}))});
+ await page.waitForFunction(()=>!document.querySelector('#spotify-confirm').disabled);await page.locator('#spotify-confirm').click();await page.waitForFunction(()=>document.querySelectorAll('.track').length===2);
+ assert.equal(await page.locator('.album a').getAttribute('href'),'https://open.spotify.com/track/1234567890123456789012');
+ assert.deepEqual(errors,[]);
+ await page.screenshot({path:'test-results/desktop-app.png'});
+ console.log('PASS: desktop window, sandbox, local protocol, appearance persistence, audio playback, Spotify import');
+ await app.close();app=null;
+ app=await electron.launch({...(executable?{executablePath:executable}:{}),args,timeout:60000});
+ const restored=await app.firstWindow();await restored.waitForFunction(()=>document.title.startsWith('Axtify Desktop'));await restored.waitForFunction(()=>document.querySelectorAll('.track').length===2);
+ console.log('PASS: library and appearance survive desktop app restart');
+}finally{if(app)await app.close();await rm(profile,{recursive:true,force:true,maxRetries:5,retryDelay:300});}
