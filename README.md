@@ -1,6 +1,6 @@
 # Axtify
 
-An independent, open-source music player for your own audio collection. Spotify's local-files interface was studied with REA to inform the project; all app code, visual design, and the included synthesized demo are original.
+An independent, open-source music player for your own audio collection. Spotify's local-files interface was studied with REA and created with an LLM to inform the project; all app code, visual design, and the included synthesized demo are original.
 
 ![Axtify desktop](docs/desktop.png)
 
